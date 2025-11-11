@@ -5,7 +5,7 @@ function App() {
   return (
     <>
       <div>
-        test
+        Lorem ipsum dolor sit amet.
       </div>
     </>
   )
