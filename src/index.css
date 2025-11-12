@@ -2,7 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* optional: test rule to see it's loaded */
-html { /* visual debug — remove later */
-  --tailwind-debug: 1;
+.dataTables_wrapper .dataTables_filter input {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  border-radius: 6px;
+  padding: 2px 8px;
 }
