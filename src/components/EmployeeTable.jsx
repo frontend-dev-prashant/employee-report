@@ -26,18 +26,51 @@ export default function EmployeeTable() {
             .replace(/"/g, "&quot;");
 
     /* 🔹 Fetch employees (exclude deleted) */
-    const fetchRows = async () => {
-        setLoading(true);
-        try {
-            const { data, error } = await supabase
-                .from("employees")
-                .select("*")
-                .is("deleted_at", null) // only show active (non-deleted)
-                .order("emp_code", { ascending: true });
+    // const fetchRows = async () => {
+    //     setLoading(true);
+    //     try {
+    //         const { data, error } = await supabase
+    //             .from("employees")
+    //             .select("*")
+    //             .is("deleted_at", null) // only show active (non-deleted)
+    //             .order("emp_code", { ascending: true });
 
-            if (error) throw error;
-            setRows(data || []);
+    //         if (error) throw error;
+    //         setRows(data || []);
 
+    //         Swal.fire({
+    //             icon: "info",
+    //             title: "🔄 Data Loaded",
+    //             timer: 2000,
+    //             text: `Fetched ${data.length} employees successfully.`,
+    //             confirmButtonColor: "#2563eb",
+    //         });
+
+    //         return { ok: true, count: (data || []).length };
+    //     } catch (err) {
+    //         console.error("❌ Fetch error:", err);
+    //         Swal.fire("Error", "Failed to load employees.", "error");
+    //         return { ok: false };
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+/* 🔹 Fetch employees (exclude deleted) */
+const fetchRows = async (showAlert = false) => {
+    setLoading(true);
+    try {
+        const { data, error } = await supabase
+            .from("employees")
+            .select("*")
+            .is("deleted_at", null)
+            .order("emp_code", { ascending: true });
+
+        if (error) throw error;
+        setRows(data || []);
+
+        // ✅ Only show alert when explicitly requested
+        if (showAlert) {
             Swal.fire({
                 icon: "info",
                 title: "🔄 Data Loaded",
@@ -45,16 +78,18 @@ export default function EmployeeTable() {
                 text: `Fetched ${data.length} employees successfully.`,
                 confirmButtonColor: "#2563eb",
             });
-
-            return { ok: true, count: (data || []).length };
-        } catch (err) {
-            console.error("❌ Fetch error:", err);
-            Swal.fire("Error", "Failed to load employees.", "error");
-            return { ok: false };
-        } finally {
-            setLoading(false);
         }
-    };
+
+        return { ok: true, count: (data || []).length };
+    } catch (err) {
+        console.error("❌ Fetch error:", err);
+        Swal.fire("Error", "Failed to load employees.", "error");
+        return { ok: false };
+    } finally {
+        setLoading(false);
+    }
+};
+
 
     /* 🔹 CRUD Operations */
     const createRow = async (payload) => {
@@ -108,12 +143,12 @@ export default function EmployeeTable() {
         });
     };
 
-    useEffect(() => {
-        (async () => {
-            const res = await fetchRows();
-            if (res.ok) initDataTable();
-        })();
-    }, []);
+useEffect(() => {
+    (async () => {
+        const res = await fetchRows(false); // no popup on page load
+        if (res.ok) initDataTable();
+    })();
+}, []);
 
     useEffect(() => {
         if (rows.length > 0) setTimeout(() => initDataTable(), 50);
@@ -190,7 +225,7 @@ export default function EmployeeTable() {
                 status: "active",
                 login_status: "logged_out",
             });
-            await fetchRows();
+            await fetchRows(true);
             const createdName = inserted?.[0]?.name || formValues.name;
             Swal.fire({
                 icon: "success",
@@ -234,9 +269,9 @@ export default function EmployeeTable() {
         if (!formValues) return;
         try {
             await updateRow(row.id, formValues);
-            await fetchRows();
+            await fetchRows(true);
             Swal.fire({
-                icon: "info",
+                icon: "success",
                 title: "Updated",
                 text: `'${row.emp_code} (${row.name})' Updated Successfully`,
                 confirmButtonColor: "#f59e0b",
@@ -264,9 +299,9 @@ export default function EmployeeTable() {
 
         try {
             await softDeleteRow(row.id, deletedBy);
-            await fetchRows();
+            await fetchRows(true);
             Swal.fire({
-                icon: "error",
+                icon: "success",
                 title: "Deleted",
                 text: `'${row.emp_code} (${row.name})' Deleted Successfully by ${deletedBy}`,
                 confirmButtonColor: "#dc2626",
@@ -278,7 +313,7 @@ export default function EmployeeTable() {
     };
 
     const handleRefresh = async () => {
-        const res = await fetchRows();
+        const res = await fetchRows(true);
         if (res.ok) {
             initDataTable();
             Swal.fire({
@@ -292,9 +327,9 @@ export default function EmployeeTable() {
 
     /* ---------- UI ---------- */
     return (
-        <div className="min-h-screen bg-gray-100 p-6">
+        <div className="min-h-screen bg-gray-100 p-2 items-center">
             <div className="max-w-full w-full mx-auto">
-                <header className="flex items-center justify-between mb-4">
+                <header className="flex items-center justify-between p-1">
                     <h1 className="text-2xl font-bold">Employee Report</h1>
                     <div className="flex gap-2">
                         {/* Add */}
@@ -302,7 +337,7 @@ export default function EmployeeTable() {
                             onClick={handleAdd}
                             className="p-2 bg-green-600 text-white rounded hover:bg-green-700"
                         >
-                            <PlusIcon className="h-6 w-6" />
+                            <PlusIcon className="h-4 w-4" />
                         </button>
 
                         {/* Back */}
@@ -310,7 +345,7 @@ export default function EmployeeTable() {
                             to="/"
                             className="p-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
                         >
-                            <ArrowLeftIcon className="h-6 w-6" />
+                            <ArrowLeftIcon className="h-4 w-4" />
                         </Link>
 
                         {/* Refresh */}
@@ -318,12 +353,12 @@ export default function EmployeeTable() {
                             onClick={handleRefresh}
                             className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                         >
-                            <ArrowPathIcon className="h-6 w-6" />
+                            <ArrowPathIcon className="h-4 w-4" />
                         </button>
                     </div>
                 </header>
 
-                <div className="bg-white rounded-xl shadow overflow-auto">
+                <div className="rounded-xl shadow overflow-y-auto h-[84vh]">
                     {loading && rows.length === 0 ? (
                         <div className="p-6 text-center text-gray-600">Loading…</div>
                     ) : rows.length === 0 ? (
@@ -332,7 +367,7 @@ export default function EmployeeTable() {
                         </div>
                     ) : (
                         <table ref={tableRef} id="myTable" className="display w-full">
-                            <thead className="bg-slate-800 text-white">
+                            <thead className="bg-slate-800 text-white sticky top-0">
                                 <tr>
                                     <th>#</th>
                                     <th>Emp Code</th>

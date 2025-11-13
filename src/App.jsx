@@ -3,8 +3,9 @@ import "./index.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./components/Home";
 import EmployeeTable from "./components/EmployeeTable";
+import About from "./components/About";
 import Navbar from "./components/Navbar";
- import { PlusIcon, ArrowLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import EmployeeTableNew from "./components/EmployeeTableNew";
 
 
 export default function App() {
@@ -18,7 +19,9 @@ export default function App() {
         <div>
           <Routes>
             <Route index element={<Home />} />
-            <Route path="/employees" element={<EmployeeTable />} />
+            {/* <Route path="/employees" element={<EmployeeTable />} /> */}
+            <Route path="/employees-new" element={<EmployeeTableNew />} />
+            <Route path="/about" element={<About />} />
           </Routes>
         </div>
       </BrowserRouter>

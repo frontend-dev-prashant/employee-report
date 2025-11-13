@@ -1,15 +1,12 @@
 // src/components/Home.js
-import React from 'react';
 import { Link } from 'react-router-dom';
-import EmployeeTable from './EmployeeTable';
-import Navbar from './Navbar';
- import { PlusIcon, ArrowLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
 const Home = () => {
     return (
         <>
             <div>
-                <Link to="/employees"><span className='underline underline-offset-2 text-blue-600'>Employees</span></Link>
+                {/* <Link to="/employees"><span className='underline underline-offset-2 text-blue-600'>Employees</span></Link> */}
+                <Link to="/employees-new"><span className='underline underline-offset-2 text-blue-600'>Employees New</span></Link>
             </div >
         </>
     );
