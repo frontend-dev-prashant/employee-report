@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./components/Home";
 import EmployeeTable from "./components/EmployeeTable";
 import Navbar from "./components/Navbar";
+ import { PlusIcon, ArrowLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
 
 export default function App() {

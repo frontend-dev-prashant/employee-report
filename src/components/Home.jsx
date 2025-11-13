@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import EmployeeTable from './EmployeeTable';
 import Navbar from './Navbar';
+ import { PlusIcon, ArrowLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
 const Home = () => {
     return (

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import myLogo from "../../src/assets/react.svg"
+ import { PlusIcon, ArrowLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
