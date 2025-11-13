@@ -163,10 +163,10 @@ export default function EmployeeTable() {
         const { value: formValues } = await Swal.fire({
             title: "Add Employee",
             html: `
-        <input id="swal-name" className="swal2-input" placeholder="Full Name">
-        <input id="swal-email" className="swal2-input" placeholder="Email">
-        <input id="swal-dept" className="swal2-input" placeholder="Department">
-        <input id="swal-role" className="swal2-input" placeholder="Role">
+        <input id="swal-name" class="swal2-input" placeholder="Full Name">
+        <input id="swal-email" class="swal2-input" placeholder="Email">
+        <input id="swal-dept" class="swal2-input" placeholder="Department">
+        <input id="swal-role" class="swal2-input" placeholder="Role">
       `,
             confirmButtonText: "Add",
             showCancelButton: true,
@@ -208,16 +208,16 @@ export default function EmployeeTable() {
         const { value: formValues } = await Swal.fire({
             title: `Edit — ${row.emp_code} (${escapeHtml(row.name)})`,
             html: `
-        <input id="swal-name" className="swal2-input" value="${escapeHtml(
+        <input id="swal-name" class="swal2-input" value="${escapeHtml(
                 row.name || ""
             )}" placeholder="Full Name">
-        <input id="swal-email" className="swal2-input" value="${escapeHtml(
+        <input id="swal-email" class="swal2-input" value="${escapeHtml(
                 row.email || ""
             )}" placeholder="Email">
-        <input id="swal-dept" className="swal2-input" value="${escapeHtml(
+        <input id="swal-dept" class="swal2-input" value="${escapeHtml(
                 row.department || ""
             )}" placeholder="Department">
-        <input id="swal-role" className="swal2-input" value="${escapeHtml(
+        <input id="swal-role" class="swal2-input" value="${escapeHtml(
                 row.role || ""
             )}" placeholder="Role">
       `,
@@ -250,7 +250,7 @@ export default function EmployeeTable() {
     const handleDelete = async (row) => {
         const { value: deletedBy } = await Swal.fire({
             title: `Delete ${escapeHtml(row.emp_code)}?`,
-            html: `<input id="swal-deletedby" className="swal2-input" placeholder="Deleted By (Your Name)">`,
+            html: `<input id="swal-deletedby" class="swal2-input" placeholder="Deleted By (Your Name)">`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonText: "Delete",
