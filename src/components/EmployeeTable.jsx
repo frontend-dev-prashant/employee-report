@@ -7,10 +7,10 @@ import { Link } from "react-router-dom";
 import { PlusIcon, ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline'; // Import the icons
 
 /* ✅ Supabase client */
-const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+// const supabase = createClient(
+//     import.meta.env.VITE_SUPABASE_URL,
+//     import.meta.env.VITE_SUPABASE_ANON_KEY
+// );
 
 export default function EmployeeTable() {
     const [rows, setRows] = useState([]);
