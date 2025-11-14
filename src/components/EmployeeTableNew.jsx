@@ -308,7 +308,7 @@ export default function EmployeeTableNew() {
                     </div>
                 </header>
 
-                <div className="rounded-xl shadow overflow-y-auto h-[86vh]">
+                {/* <div className="rounded-xl shadow overflow-y-auto h-[86vh]">
                     {loading && rows.length === 0 ? (
                         <div className="p-6 text-center text-gray-600">Loading…</div>
                     ) : rows.length === 0 ? (
@@ -370,7 +370,81 @@ export default function EmployeeTableNew() {
                             </tbody>
                         </table>
                     )}
+                </div> */}
+
+                <div className="rounded-xl shadow-lg overflow-hidden font-sans h-[86vh] bg-white">
+                    {loading && rows.length === 0 ? (
+                        <div className="p-6 text-center text-gray-600">Loading…</div>
+                    ) : rows.length === 0 ? (
+                        <div className="p-6 text-center text-gray-500">No employees found.</div>
+                    ) : (
+                        <table ref={tableRef} id="myTable" className="min-w-full text-sm text-gray-700">
+                            <thead className="bg-blue-500 text-white sticky top-0 z-10">
+                                <tr>
+                                    <th className="px-6 py-4 text-left">#</th>
+                                    <th className="px-6 py-4 text-left">Emp Code</th>
+                                    <th className="px-6 py-4 text-left">Name</th>
+                                    <th className="px-6 py-4 text-left">Email</th>
+                                    <th className="px-6 py-4 text-left">Department</th>
+                                    <th className="px-6 py-4 text-left">Role</th>
+                                    <th className="px-6 py-4 text-left">Status</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {rows.map((r, i) => (
+                                    <tr key={r.id} className="hover:bg-gray-50 transition-all duration-200">
+                                        <td className="px-6 py-4">{i + 1}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="font-mono text-sm text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                                                {r.emp_code}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 font-medium">{r.name}</td>
+                                        <td className="px-6 py-4">{r.email}</td>
+                                        <td className="px-6 py-4">{r.department}</td>
+                                        <td className="px-6 py-4">{r.role}</td>
+                                        <td className="px-6 py-4">{r.login_status}</td>
+                                        {/* <td className="px-6 py-4">
+                                            <span
+                                                className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${r.status === 'active'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
+                                                    }`}
+                                            >
+                                                {r.status}
+                                            </span>
+                                        </td> */}
+                                        <td className="px-6 py-4 text-right flex gap-3">
+
+                                            <button onClick={() => handleView(r)}
+                                                className="p-1 rounded-full border-2 border-indigo-400 text-indigo-500
+                   hover:bg-indigo-50 transition"
+                                            >
+                                                <EyeIcon className="h-5 w-5" />
+                                            </button>
+
+                                            <button onClick={() => handleEdit(r)}
+                                                className="p-1 rounded-full border-2 border-yellow-500 text-yellow-700
+                   hover:bg-yellow-50 transition"
+                                            >
+                                                <PencilSquareIcon className="h-5 w-5" />
+                                            </button>
+
+                                            <button onClick={() => handleDelete(r)}
+                                                className="p-1 rounded-full border-2 border-red-400 text-red-500
+                   hover:bg-red-50 transition"
+                                            >
+                                                <TrashIcon className="h-5 w-5" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
+
             </div>
         </div>
     );

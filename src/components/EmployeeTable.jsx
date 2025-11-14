@@ -56,39 +56,39 @@ export default function EmployeeTable() {
     //     }
     // };
 
-/* 🔹 Fetch employees (exclude deleted) */
-const fetchRows = async (showAlert = false) => {
-    setLoading(true);
-    try {
-        const { data, error } = await supabase
-            .from("employees")
-            .select("*")
-            .is("deleted_at", null)
-            .order("emp_code", { ascending: true });
+    /* 🔹 Fetch employees (exclude deleted) */
+    const fetchRows = async (showAlert = false) => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from("employees")
+                .select("*")
+                .is("deleted_at", null)
+                .order("emp_code", { ascending: true });
 
-        if (error) throw error;
-        setRows(data || []);
+            if (error) throw error;
+            setRows(data || []);
 
-        // ✅ Only show alert when explicitly requested
-        if (showAlert) {
-            Swal.fire({
-                icon: "info",
-                title: "🔄 Data Loaded",
-                timer: 2000,
-                text: `Fetched ${data.length} employees successfully.`,
-                confirmButtonColor: "#2563eb",
-            });
+            // ✅ Only show alert when explicitly requested
+            if (showAlert) {
+                Swal.fire({
+                    icon: "info",
+                    title: "🔄 Data Loaded",
+                    timer: 2000,
+                    text: `Fetched ${data.length} employees successfully.`,
+                    confirmButtonColor: "#2563eb",
+                });
+            }
+
+            return { ok: true, count: (data || []).length };
+        } catch (err) {
+            console.error("❌ Fetch error:", err);
+            Swal.fire("Error", "Failed to load employees.", "error");
+            return { ok: false };
+        } finally {
+            setLoading(false);
         }
-
-        return { ok: true, count: (data || []).length };
-    } catch (err) {
-        console.error("❌ Fetch error:", err);
-        Swal.fire("Error", "Failed to load employees.", "error");
-        return { ok: false };
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
 
     /* 🔹 CRUD Operations */
@@ -143,12 +143,12 @@ const fetchRows = async (showAlert = false) => {
         });
     };
 
-useEffect(() => {
-    (async () => {
-        const res = await fetchRows(false); // no popup on page load
-        if (res.ok) initDataTable();
-    })();
-}, []);
+    useEffect(() => {
+        (async () => {
+            const res = await fetchRows(false); // no popup on page load
+            if (res.ok) initDataTable();
+        })();
+    }, []);
 
     useEffect(() => {
         if (rows.length > 0) setTimeout(() => initDataTable(), 50);

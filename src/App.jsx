@@ -19,7 +19,7 @@ export default function App() {
         <div>
           <Routes>
             <Route index element={<Home />} />
-            {/* <Route path="/employees" element={<EmployeeTable />} /> */}
+            <Route path="/employees" element={<EmployeeTable />} />
             <Route path="/employees-new" element={<EmployeeTableNew />} />
             <Route path="/about" element={<About />} />
           </Routes>
