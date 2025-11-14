@@ -19,7 +19,7 @@ const getNavLinkClass = (isActive) => {
 };
 
 export default function About() {
-  const [stats, setStats] = useState({ total: 0, active: 0, deleted: 0 });
+  const [stats, setStats] = useState({ logged_in: 0, logged_out: 0, deleted: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +40,7 @@ export default function About() {
           .from("employees")
           .select("id", { count: "exact", head: true })
           .is("deleted_at", null)
-          .eq("status", "active");
+          .eq("login_status", "logged_in");
 
         const deletedRes = await supabase
           .from("employees")
@@ -51,7 +51,7 @@ export default function About() {
 
         setStats({
           total: totalRes.count || 0,
-          active: activeRes.count || 0,
+          login_status: activeRes.count || 0,
           deleted: deletedRes.count || 0,
         });
         setError(null);
@@ -172,14 +172,6 @@ export default function About() {
                 </a>
               </div>
             </div>
-
-            <div className="text-right">
-              <h3 className="text-sm text-slate-500">Status</h3>
-              <div className="mt-2 inline-flex items-center gap-3">
-                <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">Live DB</span>
-                <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded">Demo</span>
-              </div>
-            </div>
           </header>
 
           <section className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -191,9 +183,9 @@ export default function About() {
             </div>
 
             <div className="p-4 bg-slate-50 rounded-lg">
-              <h4 className="text-sm text-slate-500">Active</h4>
+              <h4 className="text-sm text-slate-500">Login Status (logged_in)</h4>
               <div className="mt-2 text-2xl font-semibold text-slate-900">
-                {loading ? "..." : stats.active}
+                {loading ? "..." : stats.login_status}
               </div>
             </div>
 

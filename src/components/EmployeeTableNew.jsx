@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import DataTable from "datatables.net-dt";
 import "datatables.net-dt/css/dataTables.dataTables.css";
 import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { PlusIcon, ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { EyeIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
@@ -33,78 +34,107 @@ export default function EmployeeTableNew({ loginButton }) {
 
     // Demo hardcoded OTP
     const DEMO_OTP = "1234";
+    const MySwal = withReactContent(Swal);
 
     const handleLoginClick = async () => {
-        const { value: formValues } = await Swal.fire({
+        /* ------------------------------------
+           1️⃣ Ask for email first
+        ------------------------------------ */
+        const { value: email } = await MySwal.fire({
             title: "Login",
-            html:
-                '<input id="swal-email" class="swal2-input" placeholder="Email">' +
-                '<input id="swal-otp" class="swal2-input" placeholder="OTP (demo)">',
-            focusConfirm: false,
+            html: `
+            <input id="swal-email"
+                class="swal2-input border border-gray-300 rounded-md px-3 py-2"
+                placeholder="Enter Email" />
+        `,
+            confirmButtonText: "Send OTP",
             showCancelButton: true,
-            preConfirm: () => ({
-                email: document.getElementById("swal-email")?.value?.trim(),
-                otp: document.getElementById("swal-otp")?.value?.trim(),
-            }),
+            preConfirm: () => document.getElementById("swal-email").value.trim(),
         });
 
-        if (!formValues) return; // cancelled
+        if (!email) return;
 
-        const { email, otp } = formValues;
+        /* ------------------------------------
+           2️⃣ Check email in Supabase
+        ------------------------------------ */
+        const { data: found, error } = await supabase
+            .from("employees")
+            .select("*")
+            .eq("email", email)
+            .is("deleted_at", null)
+            .limit(1);
 
-        if (!email) {
-            Swal.fire({ icon: "warning", title: "Missing", text: "Please enter email." });
+        if (!found || found.length === 0) {
+            Swal.fire({ icon: "error", title: "Not found", text: "Email not found in database." });
             return;
         }
 
-        try {
-            // 1) Check if email exists and not soft-deleted
-            const { data: found, error: selErr } = await supabase
-                .from("employees")
-                .select("*")
-                .eq("email", email)
-                .is("deleted_at", null)
-                .limit(1);
+        const user = found[0];
 
-            if (selErr) throw selErr;
+        /* ------------------------------------
+           3️⃣ Show OTP input UI (4 boxes)
+        ------------------------------------ */
+        await MySwal.fire({
+            title: "Enter OTP",
+            html: `
+            <p class="mb-2 text-gray-700">OTP sent to <b>${email}</b></p>
 
-            if (!found || found.length === 0) {
-                Swal.fire({ icon: "error", title: "Not found", text: `Email ${email} not found.` });
-                return;
-            }
+            <div class="flex justify-center gap-3 mt-3" id="otp-container">
+                ${[0, 1, 2, 3]
+                    .map(
+                        (i) =>
+                            `<input id="otp-${i}" maxlength="1"
+                                class="otp-input w-12 h-12 text-xl text-center border-2 border-gray-300 rounded-md
+                                focus:border-indigo-500 focus:ring focus:ring-indigo-200"
+                            />`
+                    )
+                    .join("")}
+            </div>
+        `,
+            confirmButtonText: "Verify OTP",
+            focusConfirm: false,
+            didOpen: () => setupOtpInputs(),
+        });
 
-            const user = found[0];
+        /* ------------------------------------
+           4️⃣ Gather OTP entered
+        ------------------------------------ */
+        const otp = Array.from({ length: 4 }, (_, i) =>
+            document.getElementById(`otp-${i}`).value
+        ).join("");
 
-            // 2) Validate OTP
-            if (otp !== DEMO_OTP) {
-                Swal.fire({ icon: "error", title: "Wrong OTP", text: "The OTP you entered is incorrect." });
-                return;
-            }
-
-            // 3) OTP correct → update login_status
-            const { data: updated, error: updErr } = await supabase
-                .from("employees")
-                .update({ login_status: "logged_in" })
-                .eq("id", user.id)
-                .select("*");
-
-            if (updErr) throw updErr;
-
-            // Refresh UI
-            await fetchRows();
-            initDataTable();
-
-            // Show success referencing emp_code and name
-            Swal.fire({
-                icon: "success",
-                title: "Logged In",
-                text: `${updated?.[0]?.emp_code || user.emp_code} (${updated?.[0]?.name || user.name}) Logged In Successfully`,
-                confirmButtonColor: "#16a34a",
-            });
-        } catch (err) {
-            console.error("Login error:", err);
-            Swal.fire({ icon: "error", title: "Error", text: err.message || "Login failed. Check console." });
+        if (otp !== DEMO_OTP) {
+            Swal.fire({ icon: "error", title: "Wrong OTP", text: "Incorrect OTP" });
+            return;
         }
+
+        /* ------------------------------------
+           5️⃣ Update login_status in Supabase
+        ------------------------------------ */
+        const { data: updated, updErr } = await supabase
+            .from("employees")
+            .update({ login_status: "logged_in" })
+            .eq("id", user.id)
+            .select("*");
+
+        if (updErr) {
+            Swal.fire("Error", updErr.message, "error");
+            return;
+        }
+
+        // Refresh UI
+        await fetchRows();
+        initDataTable();
+
+        /* ------------------------------------
+           6️⃣ Success message
+        ------------------------------------ */
+        Swal.fire({
+            icon: "success",
+            title: "Logged In",
+            text: `${updated?.[0]?.emp_code || user.emp_code} (${updated?.[0]?.name || user.name}) Logged In Successfully`,
+            confirmButtonColor: "#16a34a",
+        });
     };
 
 
@@ -118,6 +148,13 @@ export default function EmployeeTableNew({ loginButton }) {
     /* 🔹 Fetch employees (exclude deleted) */
     const fetchRows = async (showAlert = false) => {
         setLoading(true);
+
+        // DESTROY DATATABLE BEFORE React re-renders
+        if (dtRef.current) {
+            try { dtRef.current.destroy(); } catch { }
+            dtRef.current = null;
+        }
+
         try {
             const { data, error } = await supabase
                 .from("employees")
@@ -128,25 +165,27 @@ export default function EmployeeTableNew({ loginButton }) {
             if (error) throw error;
 
             setRows(data || []);
+
             if (showAlert) {
                 Swal.fire({
                     icon: "success",
                     title: "Data Loaded",
-                    timer: 2000,
-                    text: `Fetched ${data.length} employees successfully.`,
-                    confirmButtonColor: "#2563eb",
+                    timer: 1500,
+                    text: `Fetched ${data.length} employees.`,
                 });
             }
 
-            return { ok: true, count: (data || []).length };
+            return { ok: true };
+
         } catch (err) {
-            console.error("❌ Fetch error:", err);
-            Swal.fire("Error", "Failed to load employees.", "error");
+            console.error(err);
+            Swal.fire("Error", "Load failed", "error");
             return { ok: false };
         } finally {
             setLoading(false);
         }
     };
+
 
     /* 🔹 CRUD operations */
     const createRow = async (payload) => {
@@ -208,10 +247,13 @@ export default function EmployeeTableNew({ loginButton }) {
         })();
     }, []);
 
-    /* 🔹 Refresh table on data change */
+
+    /* 🔹 Refresh DataTable after rows update & DOM ready */
     useEffect(() => {
-        if (rows.length > 0) setTimeout(() => initDataTable(), 50);
-    }, [rows]);
+        if (!loading && rows.length > 0) {
+            setTimeout(() => initDataTable(), 0);
+        }
+    }, [rows, loading]);
 
     useEffect(() => {
         return () => {
@@ -253,7 +295,6 @@ export default function EmployeeTableNew({ loginButton }) {
         try {
             const inserted = await createRow({
                 ...formValues,
-                status: "active",
                 login_status: "logged_out",
             });
             await fetchRows(true);
@@ -345,7 +386,6 @@ export default function EmployeeTableNew({ loginButton }) {
           <p><strong>Email:</strong> ${escapeHtml(row.email)}</p>
           <p><strong>Department:</strong> ${escapeHtml(row.department)}</p>
           <p><strong>Role:</strong> ${escapeHtml(row.role)}</p>
-          <p><strong>Status:</strong> ${escapeHtml(row.status)}</p>
           <p><strong>Login Status:</strong> ${escapeHtml(row.login_status)}</p>
           ${row.deleted_at
                     ? `<p><strong>Deleted At:</strong> ${new Date(row.deleted_at).toLocaleString()}</p>
@@ -364,6 +404,36 @@ export default function EmployeeTableNew({ loginButton }) {
             initDataTable();
         }
     };
+
+    /* 🔥 Auto-move & Auto-submit OTP digits */
+    const setupOtpInputs = () => {
+        const inputs = document.querySelectorAll(".otp-input");
+        inputs[0].focus();
+
+        inputs.forEach((inp, idx) => {
+            inp.addEventListener("input", () => {
+                inp.value = inp.value.replace(/[^0-9]/g, "");
+
+                // Move to next box when typed
+                if (inp.value && idx < 3) {
+                    inputs[idx + 1].focus();
+                }
+
+                // Auto submit when all 4 digits filled
+                if ([...inputs].every((i) => i.value)) {
+                    Swal.clickConfirm();
+                }
+            });
+
+            // Backspace handling
+            inp.addEventListener("keydown", (e) => {
+                if (e.key === "Backspace" && !inp.value && idx > 0) {
+                    inputs[idx - 1].focus();
+                }
+            });
+        });
+    };
+
 
     /* ---------- UI ---------- */
     return (
@@ -445,94 +515,81 @@ export default function EmployeeTableNew({ loginButton }) {
             {/* navbar end*/}
             < div className="min-h-screen bg-gray-100 p-2 items-center" >
                 <div className="max-w-full w-full mx-auto">
-                    <header className="flex items-end justify-end p-1">
-                        {/* <h1 className="text-2xl font-bold">Employee Report</h1> */}
-                        <div className="flex gap-2">
-                            <button
-                                title="Add Employee"
-                                onClick={handleAdd}
-                                className="p-2 bg-green-600 text-white rounded hover:bg-green-700"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                            </button>
-                            {/* <Link
-                            title="Back to Home"
-                            to="/"
-                            className="p-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
-                        >
-                            <ArrowLeftIcon className="h-4 w-4" />
-                        </Link> */}
-                            <button
-                                title="Refresh Employee List"
-                                onClick={handleRefresh}
-                                className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                            >
-                                <ArrowPathIcon className="h-4 w-4" />
-                            </button>
-                        </div>
-                    </header>
 
-                    <div className="rounded-xl shadow overflow-y-auto h-[86vh]">
+                    <div className="shadow overflow-y-auto h-[86vh]">
                         {loading && rows.length === 0 ? (
                             <div className="p-6 text-center text-gray-600">Loading…</div>
                         ) : rows.length === 0 ? (
                             <div className="p-6 text-center text-gray-500">No employees found.</div>
                         ) : (
-                            <table ref={tableRef} id="myTable" className="display w-full font-mono">
-                                <thead className="bg-slate-800 text-white sticky top-0">
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Emp Code</th>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Department</th>
-                                        <th>Role</th>
-                                        <th>Login Status</th>
-                                        <th className="text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {rows.map((r, i) => (
-                                        <tr key={r.id}>
-                                            <td>{i + 1}</td>
-                                            <td>
-                                                <span className="font-mono text-sm text-blue-700 bg-blue-50 px-2 py-1 rounded">
-                                                    {r.emp_code}
-                                                </span>
-                                            </td>
-                                            <td className="font-medium">{r.name}</td>
-                                            <td>{r.email}</td>
-                                            <td>{r.department}</td>
-                                            <td>{r.role}</td>
-                                            <td>{r.login_status}</td>
-                                            <td className="space-x-2 flex justify-end">
-                                                <button
-                                                    onClick={() => handleView(r)}
-                                                    title="View Employee"
-                                                    className="p-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
-                                                >
-                                                    <EyeIcon className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleEdit(r)}
-                                                    title="Edit Employee"
-                                                    className="p-2 bg-yellow-400 rounded hover:bg-yellow-500"
-                                                >
-                                                    <PencilSquareIcon className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(r)}
-                                                    title="Delete Employee"
-                                                    className="p-2 bg-red-500 text-white rounded hover:bg-red-600"
-                                                >
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            </td>
+                            <>
+                                <div className="flex justify-items-end">
+                                    <button
+                                        title="Add Employee"
+                                        onClick={handleAdd}
+                                        className="p-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                    >
+                                        <PlusIcon className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        title="Refresh Employee List"
+                                        onClick={handleRefresh}
+                                        className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    >
+                                        <ArrowPathIcon className="h-4 w-4" />
+                                    </button>
+                                </div>
+                                <table
+                                    ref={tableRef}
+                                    className="min-w-full table-auto bg-white shadow-lg rounded-lg overflow-hidden"
+                                >
 
+                                    <thead className="bg-gradient-to-r from-blue-500 to-teal-500 text-white">
+                                        <tr className="border-b border-gray-200">
+                                            <th className="p-4 text-left">#</th>
+                                            <th className="p-4 text-left">Emp Code</th>
+                                            <th className="p-4 text-left">Name</th>
+                                            <th className="p-4 text-left">Email</th>
+                                            <th className="p-4 text-left">Department</th>
+                                            <th className="p-4 text-left">Role</th>
+                                            <th className="p-4 text-left">Login Status</th>
+                                            <th className="p-4 text-right">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+
+                                    <tbody>
+                                        {rows.map((r, i) => (
+                                            <tr
+                                                key={r.id}
+                                                className="hover:bg-gray-100 transition-all duration-300 border-b border-gray-00"
+                                            >
+                                                <td className="p-4">{i + 1}</td>
+                                                <td className="p-4">
+                                                    <span className="font-mono text-blue-700 bg-blue-50 px-3 py-1 rounded-md">
+                                                        {r.emp_code}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 font-medium">{r.name}</td>
+                                                <td className="p-4">{r.email}</td>
+                                                <td className="p-4">{r.department}</td>
+                                                <td className="p-4">{r.role}</td>
+                                                <td className="p-4">{r.login_status}</td>
+                                                <td className="p-4 text-right space-x-3">
+                                                    <button className="p-2 text-indigo-600 rounded-md hover:bg-indigo-200 transition duration-300">
+                                                        <EyeIcon className="h-5 w-5" />
+                                                    </button>
+                                                    <button className="p-2 text-yellow-600 rounded-md hover:bg-yellow-200 transition duration-300">
+                                                        <PencilSquareIcon className="h-5 w-5" />
+                                                    </button>
+                                                    <button className="p-2 text-red-600 rounded-md hover:bg-red-200 transition duration-300">
+                                                        <TrashIcon className="h-5 w-5" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </>
                         )}
                     </div>
                 </div>
