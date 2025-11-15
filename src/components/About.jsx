@@ -157,7 +157,7 @@ export default function About() {
               </p>
               <div className="mt-4 flex gap-3">
                 <a
-                  href="/employees"
+                  href="/employees-new"
                   className="inline-block px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
                 >
                   Open Employee Report
